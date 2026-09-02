@@ -4,7 +4,7 @@ import { translations, formatCurrency, formatDisplayDate, formatMonthYear } from
 import { 
   User, Shield, Phone, Mail, MapPin, Briefcase, Calendar, 
   CreditCard, FileText, Upload, Settings, CheckCircle2, AlertCircle, 
-  Wallet, ShieldCheck, LogOut
+  Wallet, ShieldCheck, LogOut, Edit3, UserCheck
 } from 'lucide-react';
 import { Payment } from '../types';
 
@@ -13,13 +13,15 @@ interface ProfileViewProps {
   onOpenUploadReceipt: () => void;
   onOpenReceiptsList: () => void;
   onOpenSettings: () => void;
+  onOpenEditProfile: () => void;
 }
 
 export const ProfileView: React.FC<ProfileViewProps> = ({
   onOpenReceipt,
   onOpenUploadReceipt,
   onOpenReceiptsList,
-  onOpenSettings
+  onOpenSettings,
+  onOpenEditProfile
 }) => {
   const { lang, currentUser, members, payments, settings, setRole } = useApp();
   const t = translations[lang];
@@ -74,6 +76,11 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
 
             <p className="text-xs text-slate-500 dark:text-slate-400">
               {settings.associationNameBn} ({settings.associationNameEn})
+              {currentUser.designation && (
+                <span className="ml-1.5 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium">
+                  • {currentUser.designation}
+                </span>
+              )}
             </p>
 
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 pt-2 text-xs text-slate-600 dark:text-slate-300">
@@ -97,11 +104,19 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           </div>
 
           {/* Quick Actions */}
-          <div className="flex flex-col gap-2 w-full sm:w-auto">
+          <div className="flex flex-col sm:flex-row lg:flex-col gap-2 w-full sm:w-auto shrink-0">
+            <button
+              onClick={onOpenEditProfile}
+              className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold flex items-center justify-center gap-2 shadow-xs transition-colors"
+            >
+              <Edit3 className="w-4 h-4" />
+              <span>{currentUser.role === 'admin' ? (lang === 'bn' ? 'এডমিন প্রোফাইল পরিবর্তন' : 'Edit Admin Profile') : (lang === 'bn' ? 'প্রোফাইল পরিবর্তন' : 'Edit Profile')}</span>
+            </button>
+
             {currentUser.role === 'admin' ? (
               <button
                 onClick={onOpenSettings}
-                className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold flex items-center justify-center gap-2 transition-colors"
+                className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold flex items-center justify-center gap-2 transition-colors border border-slate-200 dark:border-slate-700"
               >
                 <Settings className="w-4 h-4 text-emerald-600" />
                 <span>{t.settings}</span>

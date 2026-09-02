@@ -20,6 +20,7 @@ export interface User {
   memberId?: string;
   phone?: string;
   avatar?: string;
+  designation?: string;
 }
 
 export interface Member {
@@ -122,4 +123,15 @@ export interface AppNotification {
   date: string;
   isRead: boolean;
   type: 'notice' | 'payment' | 'due' | 'receipt';
+}
+
+export interface SubscriptionStatus {
+  currentMonth: string;
+  paidMembers: Array<Member & { payment?: Payment }>;
+  dueMembers: Array<Member & { payment?: Payment }>;
+  partialMembers: Array<Member & { payment?: Payment }>;
+  paidCount: number;
+  dueCount: number;
+  totalAssigned: number;
+  totalCollected: number;
 }

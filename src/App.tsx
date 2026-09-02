@@ -7,6 +7,7 @@ import { MoneyReceiptModal } from './components/MoneyReceiptModal';
 import { BankReceiptUploadModal } from './components/BankReceiptUploadModal';
 import { BankReceiptsListModal } from './components/BankReceiptsListModal';
 import { SettingsModal } from './components/SettingsModal';
+import { EditProfileModal } from './components/EditProfileModal';
 import { NotificationDrawer } from './components/NotificationDrawer';
 
 import { DashboardView } from './views/DashboardView';
@@ -27,6 +28,7 @@ const MainLayout: React.FC = () => {
   const [isUploadReceiptOpen, setIsUploadReceiptOpen] = useState(false);
   const [isReceiptsListOpen, setIsReceiptsListOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   
   // Specific action triggers
@@ -100,6 +102,7 @@ const MainLayout: React.FC = () => {
             onOpenUploadReceipt={() => setIsUploadReceiptOpen(true)}
             onOpenReceiptsList={() => setIsReceiptsListOpen(true)}
             onOpenSettings={() => setIsSettingsOpen(true)}
+            onOpenEditProfile={() => setIsEditProfileOpen(true)}
           />
         )}
       </main>
@@ -129,12 +132,20 @@ const MainLayout: React.FC = () => {
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
+        onOpenEditProfile={() => setIsEditProfileOpen(true)}
+      />
+
+      <EditProfileModal
+        isOpen={isEditProfileOpen}
+        onClose={() => setIsEditProfileOpen(false)}
       />
 
       <NotificationDrawer
         isOpen={isNotificationsOpen}
         onClose={() => setIsNotificationsOpen(false)}
         onOpenReceipts={() => setIsReceiptsListOpen(true)}
+        onOpenReceipt={handleOpenReceipt}
+        onRecordPaymentForMember={(memberId) => handleOpenRecordPayment(memberId)}
       />
     </div>
   );

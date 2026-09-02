@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { 
   Role, Language, Theme, Member, Payment, Transaction, Notice, 
   BankReceipt, AppSettings, User, AppNotification, PaymentStatus,
-  IncomeCategory, ExpenseCategory
+  IncomeCategory, ExpenseCategory, SubscriptionStatus
 } from '../types';
 import { 
   initialMembers, initialPayments, initialTransactions, 
@@ -17,10 +17,12 @@ interface AppContextType {
   setTheme: (theme: Theme) => void;
   currentUser: User;
   setCurrentUser: (user: User) => void;
+  updateCurrentUser: (updated: Partial<User>) => void;
   setRole: (role: Role) => void;
   users: User[];
   settings: AppSettings;
   updateSettings: (newSettings: Partial<AppSettings>) => void;
+  subscriptionStatus: SubscriptionStatus;
   
   // Members
   members: Member[];
@@ -128,6 +130,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const setCurrentUser = (user: User) => {
     setCurrentUserState(user);
     localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+  };
+
+  const updateCurrentUser = (updatedData: Partial<User>) => {
+    setCurrentUserState(prev => {
+      const updated = { ...prev, ...updatedData };
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updated));
+      return updated;
+    });
+
+    addAppNotification({
+      title: lang === 'bn' ? 'প্রোফাইল আপডেট' : 'Profile Updated',
+      message: lang === 'bn' ? 'প্রোফাইল সফলভাবে আপডেট করা হয়েছে।' : 'Profile details updated successfully.',
+      type: 'notice'
+    });
   };
 
   const setRole = (role: Role) => {
@@ -511,6 +527,52 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  // Current Month Subscription Status (Paid vs Due)
+  const currentMonth = new Date().toISOString().slice(0, 7);
+
+  const subscriptionStatus: SubscriptionStatus = useMemo(() => {
+    const activeMembers = members.filter(m => m.status === 'active');
+    const paidMembers: Array<Member & { payment?: Payment }> = [];
+    const dueMembers: Array<Member & { payment?: Payment }> = [];
+    const partialMembers: Array<Member & { payment?: Payment }> = [];
+
+    let totalCollected = 0;
+    let totalAssigned = 0;
+
+    activeMembers.forEach(member => {
+      const fee = member.monthlyFee || settings.defaultMonthlyFee || 500;
+      totalAssigned += fee;
+
+      const memberPayments = payments.filter(
+        p => (p.memberId === member.memberId || p.memberName === member.name) && p.month === currentMonth
+      );
+      const totalPaid = memberPayments.reduce((sum, p) => sum + p.paidAmount, 0);
+      const lastPayment = memberPayments[0];
+
+      if (totalPaid >= fee) {
+        totalCollected += totalPaid;
+        paidMembers.push({ ...member, payment: lastPayment });
+      } else if (totalPaid > 0) {
+        totalCollected += totalPaid;
+        partialMembers.push({ ...member, payment: lastPayment });
+        dueMembers.push({ ...member, payment: lastPayment });
+      } else {
+        dueMembers.push({ ...member, payment: undefined });
+      }
+    });
+
+    return {
+      currentMonth,
+      paidMembers,
+      dueMembers,
+      partialMembers,
+      paidCount: paidMembers.length,
+      dueCount: dueMembers.length,
+      totalAssigned,
+      totalCollected
+    };
+  }, [members, payments, settings.defaultMonthlyFee, currentMonth]);
+
   return (
     <AppContext.Provider
       value={{
@@ -520,10 +582,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setTheme,
         currentUser,
         setCurrentUser,
+        updateCurrentUser,
         setRole,
         users: defaultUsers,
         settings,
         updateSettings,
+        subscriptionStatus,
         members,
         addMember,
         updateMember,

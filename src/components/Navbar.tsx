@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { translations } from '../utils/translations';
+import { translations, toBengaliNumber } from '../utils/translations';
 import { 
   Building2, Globe, Sun, Moon, Bell, Shield, User as UserIcon, 
-  Settings, LogOut, CheckCheck, Menu, X, ArrowLeftRight
+  Settings, LogOut, CheckCheck, Menu, X, ArrowLeftRight, AlertCircle, CheckCircle2
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -19,7 +19,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const { 
     lang, setLang, theme, setTheme, currentUser, setRole, 
-    settings, notifications, activeTab, setActiveTab 
+    settings, notifications, subscriptionStatus, activeTab, setActiveTab 
   } = useApp();
   const t = translations[lang];
 
@@ -27,6 +27,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
 
   const unreadNotifCount = notifications.filter(n => !n.isRead).length;
+  const totalAlertCount = unreadNotifCount + (subscriptionStatus.dueCount > 0 ? subscriptionStatus.dueCount : 0);
 
   const handleRoleToggle = (targetRole: 'admin' | 'member') => {
     setRole(targetRole);
@@ -166,17 +167,40 @@ export const Navbar: React.FC<NavbarProps> = ({
               {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
             </button>
 
+            {/* Quick Monthly Subscription Status Pill (Identifies paid & unpaid members) */}
+            <button
+              onClick={onOpenNotifications}
+              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition-all cursor-pointer select-none"
+              title={lang === 'bn' 
+                ? `চলতি মাস: ${subscriptionStatus.paidCount} জন পরিশোধ করেছে, ${subscriptionStatus.dueCount} জনের চাঁদা বাকি` 
+                : `This month: ${subscriptionStatus.paidCount} paid, ${subscriptionStatus.dueCount} unpaid`}
+            >
+              <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                <span>{toBengaliNumber(subscriptionStatus.paidCount)} {lang === 'bn' ? 'পরিশোধ' : 'Paid'}</span>
+              </span>
+              <span className="text-slate-300 dark:text-slate-600">|</span>
+              <span className="flex items-center gap-1 text-rose-600 dark:text-rose-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                <span>{toBengaliNumber(subscriptionStatus.dueCount)} {lang === 'bn' ? 'বাকি' : 'Due'}</span>
+              </span>
+            </button>
+
             {/* Notification Bell */}
             <button
               id="navbar-notifications-btn"
               onClick={onOpenNotifications}
               className="shrink-0 relative p-1.5 sm:p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              title={t.notifications}
+              title={lang === 'bn' 
+                ? `${t.notifications} | চলতি মাস: ${subscriptionStatus.paidCount} জন পরিশোধিত, ${subscriptionStatus.dueCount} জন বাকি` 
+                : `${t.notifications} | This month: ${subscriptionStatus.paidCount} paid, ${subscriptionStatus.dueCount} unpaid`}
             >
               <Bell className="w-4 h-4" />
-              {unreadNotifCount > 0 && (
-                <span className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-rose-600 text-white text-[10px] font-bold flex items-center justify-center animate-pulse">
-                  {unreadNotifCount}
+              {totalAlertCount > 0 && (
+                <span className={`absolute top-0.5 right-0.5 min-w-4 h-4 px-1 rounded-full text-white text-[10px] font-bold flex items-center justify-center ${
+                  subscriptionStatus.dueCount > 0 ? 'bg-rose-600 animate-pulse' : 'bg-emerald-600'
+                }`}>
+                  {totalAlertCount}
                 </span>
               )}
             </button>
