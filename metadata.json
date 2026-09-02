@@ -1,0 +1,6 @@
+{
+  "name": "সমিতি",
+  "description": "সমিতির সদস্য, মাসিক চাঁদা, ব্যাংক রসিদ, আয়-ব্যয়, নোটিশ ও রিপোর্ট পরিচালনার পূর্ণাঙ্গ ডিজিটাল ম্যানেজমেন্ট অ্যাপ।",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
