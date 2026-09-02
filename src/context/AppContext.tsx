@@ -156,9 +156,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (saved) {
       try { 
         const parsed = JSON.parse(saved); 
+        let changed = false;
         if (parsed.associationNameBn === 'কেয়ারটেকার ওয়েলফেয়ার অ্যাসোসিয়েশন' || !parsed.associationNameBn) {
           parsed.associationNameBn = 'সমিতি';
           parsed.associationNameEn = 'Samity';
+          changed = true;
+        }
+        if (!parsed.taglineBn || parsed.taglineBn.includes('পেশাগত')) {
+          parsed.taglineBn = 'পারস্পরিক ঐক্য, কল্যাণ ও সার্বিক সহযোগিতায় নিবেদিত';
+          parsed.taglineEn = 'Dedicated to unity, welfare and mutual cooperation';
+          changed = true;
+        }
+        if (changed) {
           localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(parsed));
         }
         return parsed;

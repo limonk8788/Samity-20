@@ -3,7 +3,7 @@ import { Member, Payment, Transaction, Notice, BankReceipt, AppSettings, User } 
 export const initialSettings: AppSettings = {
   associationNameBn: 'সমিতি',
   associationNameEn: 'Samity',
-  taglineBn: 'পারস্পরিক ঐক্য, কল্যাণ ও সার্বিক সহযোগিতায় নিবেদিত',
+  taglineBn: 'পারস্পরিক ঐক্য, কল্যাণ ও সার্বিক সহযোগিতায় নিবেদিত',
   taglineEn: 'Dedicated to unity, welfare and mutual cooperation',
   address: 'বাড়ি #২৮, রোড #৭/এ, ধানমন্ডি আ/এ, ঢাকা-১২০৯',
   phone: '+৮৮০ ১৭ ১২৩৪ ৫৬৭৮',

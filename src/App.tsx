@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Navbar } from './components/Navbar';
+import { Footer } from './components/Footer';
 import { BottomNav } from './components/BottomNav';
 import { MoneyReceiptModal } from './components/MoneyReceiptModal';
 import { BankReceiptUploadModal } from './components/BankReceiptUploadModal';
@@ -51,7 +52,7 @@ const MainLayout: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors w-full max-w-full overflow-x-hidden">
       {/* Top Navbar */}
       <Navbar 
         onOpenSettings={() => setIsSettingsOpen(true)}
@@ -60,7 +61,7 @@ const MainLayout: React.FC = () => {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-24 sm:pb-28 lg:pb-10">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 pt-4 sm:pt-6 pb-8 sm:pb-12">
         {activeTab === 'dashboard' && (
           <DashboardView
             onOpenReceipt={handleOpenReceipt}
@@ -102,6 +103,9 @@ const MainLayout: React.FC = () => {
           />
         )}
       </main>
+
+      {/* Main Application Footer */}
+      <Footer />
 
       {/* Bottom Navigation for Mobile */}
       <BottomNav />
