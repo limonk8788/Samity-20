@@ -1,9 +1,9 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Payment } from '../types';
 import { useApp } from '../context/AppContext';
 import { translations, formatCurrency, formatDisplayDate, formatMonthYear } from '../utils/translations';
-import { Printer, Download, X, Building2, CheckCircle2 } from 'lucide-react';
-import html2canvas from 'html2canvas';
+import { Printer, Download, X, Building2, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
+import { downloadElementAsPng } from '../utils/downloadImage';
 
 interface MoneyReceiptModalProps {
   payment: Payment | null;
@@ -14,6 +14,8 @@ export const MoneyReceiptModal: React.FC<MoneyReceiptModalProps> = ({ payment, o
   const { lang, settings } = useApp();
   const t = translations[lang];
   const receiptRef = useRef<HTMLDivElement>(null);
+  const [downloadState, setDownloadState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   if (!payment) return null;
 
@@ -22,21 +24,37 @@ export const MoneyReceiptModal: React.FC<MoneyReceiptModalProps> = ({ payment, o
   };
 
   const handleDownloadPng = async () => {
-    if (!receiptRef.current) return;
-    try {
-      const canvas = await html2canvas(receiptRef.current, {
-        scale: 2,
-        backgroundColor: '#ffffff',
-        useCORS: true
-      });
-      const dataUrl = canvas.toDataURL('image/png');
-      const a = document.createElement('a');
-      a.href = dataUrl;
-      a.download = `Receipt_${payment.receiptNumber}_${payment.memberId}.png`;
-      a.click();
-    } catch (err) {
-      console.error('Error generating image', err);
-    }
+    if (!receiptRef.current || downloadState === 'loading') return;
+    setErrorMessage(null);
+
+    const filename = `Receipt_${payment.receiptNumber || 'REC'}_${payment.memberId}.png`;
+
+    await downloadElementAsPng({
+      filename,
+      element: receiptRef.current,
+      scale: 2,
+      backgroundColor: '#ffffff',
+      onStart: () => {
+        setDownloadState('loading');
+      },
+      onSuccess: () => {
+        setDownloadState('success');
+        setTimeout(() => {
+          setDownloadState('idle');
+        }, 3500);
+      },
+      onError: (err) => {
+        setDownloadState('error');
+        setErrorMessage(
+          lang === 'bn' 
+            ? 'PNG ডাউনলোড সম্পন্ন করা যায়নি। আপনি "প্রিন্ট / PDF" বাটন ব্যবহার করতে পারেন।' 
+            : 'Could not download PNG. Please use the "Print / PDF" button.'
+        );
+        setTimeout(() => {
+          setDownloadState('idle');
+        }, 5000);
+      }
+    });
   };
 
   return (
@@ -62,10 +80,32 @@ export const MoneyReceiptModal: React.FC<MoneyReceiptModalProps> = ({ payment, o
             </button>
             <button
               onClick={handleDownloadPng}
-              className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-semibold flex items-center gap-1.5 hover:bg-emerald-700 transition-colors shadow-sm shadow-emerald-600/20"
+              disabled={downloadState === 'loading'}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm ${
+                downloadState === 'loading'
+                  ? 'bg-emerald-700 text-white opacity-80 cursor-wait'
+                  : downloadState === 'success'
+                  ? 'bg-emerald-700 text-white ring-2 ring-emerald-400'
+                  : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20 active:scale-95'
+              }`}
+              title={lang === 'bn' ? 'রসিদটি PNG ছবি হিসেবে ডাউনলোড করুন' : 'Download receipt as PNG image'}
             >
-              <Download className="w-3.5 h-3.5" />
-              <span>{t.downloadPng}</span>
+              {downloadState === 'loading' ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>{lang === 'bn' ? 'প্রস্তুত হচ্ছে...' : 'Preparing...'}</span>
+                </>
+              ) : downloadState === 'success' ? (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-200" />
+                  <span>{lang === 'bn' ? 'ডাউনলোড হয়েছে!' : 'Downloaded!'}</span>
+                </>
+              ) : (
+                <>
+                  <Download className="w-3.5 h-3.5" />
+                  <span>{t.downloadPng}</span>
+                </>
+              )}
             </button>
             <button
               onClick={onClose}
@@ -75,6 +115,22 @@ export const MoneyReceiptModal: React.FC<MoneyReceiptModalProps> = ({ payment, o
             </button>
           </div>
         </div>
+
+        {/* Error notification banner if download fails */}
+        {errorMessage && (
+          <div className="no-print bg-rose-50 dark:bg-rose-950/50 border-b border-rose-200 dark:border-rose-900 px-4 py-2 flex items-center justify-between text-xs text-rose-700 dark:text-rose-300">
+            <div className="flex items-center gap-1.5">
+              <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
+              <span>{errorMessage}</span>
+            </div>
+            <button
+              onClick={handlePrint}
+              className="underline font-semibold hover:text-rose-900 dark:hover:text-white shrink-0 ml-2"
+            >
+              {lang === 'bn' ? 'প্রিন্ট অপশন খুলুন' : 'Open Print'}
+            </button>
+          </div>
+        )}
 
         {/* Printable Receipt Paper Container */}
         <div className="overflow-y-auto p-2 sm:p-8 bg-slate-100 dark:bg-slate-950 flex justify-center">

@@ -3,15 +3,18 @@ import { useApp } from '../context/AppContext';
 import { translations, formatCurrency, formatDisplayDate, formatMonthYear } from '../utils/translations';
 import { 
   FileText, Printer, Download, Filter, Calendar, Users, 
-  TrendingUp, TrendingDown, Wallet, Building2, CheckCircle2 
+  TrendingUp, TrendingDown, Wallet, Building2, CheckCircle2,
+  Loader2, AlertCircle
 } from 'lucide-react';
-import html2canvas from 'html2canvas';
+import { downloadElementAsPng } from '../utils/downloadImage';
 import { Payment } from '../types';
 
 export const ReportsView: React.FC = () => {
   const { lang, members, payments, transactions, settings } = useApp();
   const t = translations[lang];
   const reportRef = useRef<HTMLDivElement>(null);
+  const [downloadState, setDownloadState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const currentYearMonth = new Date().toISOString().slice(0, 7); // e.g. "2026-09"
   const [selectedMonth, setSelectedMonth] = useState(currentYearMonth);
@@ -25,21 +28,37 @@ export const ReportsView: React.FC = () => {
 
   // Download PNG Handler
   const handleDownloadPng = async () => {
-    if (!reportRef.current) return;
-    try {
-      const canvas = await html2canvas(reportRef.current, {
-        scale: 2,
-        backgroundColor: '#ffffff',
-        useCORS: true
-      });
-      const dataUrl = canvas.toDataURL('image/png');
-      const a = document.createElement('a');
-      a.href = dataUrl;
-      a.download = `Report_${selectedMonth}_${activeReportTab}.png`;
-      a.click();
-    } catch (err) {
-      console.error('Error generating image', err);
-    }
+    if (!reportRef.current || downloadState === 'loading') return;
+    setErrorMessage(null);
+
+    const filename = `Report_${settings.associationNameEn ? settings.associationNameEn.replace(/\s+/g, '_') : 'Samity'}_${selectedMonth}_${activeReportTab}.png`;
+
+    await downloadElementAsPng({
+      filename,
+      element: reportRef.current,
+      scale: 2,
+      backgroundColor: '#ffffff',
+      onStart: () => {
+        setDownloadState('loading');
+      },
+      onSuccess: () => {
+        setDownloadState('success');
+        setTimeout(() => {
+          setDownloadState('idle');
+        }, 3500);
+      },
+      onError: (err) => {
+        setDownloadState('error');
+        setErrorMessage(
+          lang === 'bn' 
+            ? 'PNG ডাউনলোড সম্পন্ন করা যায়নি। আপনি "প্রিন্ট / PDF" বাটন দিয়ে সেভ করতে পারেন।' 
+            : 'Could not download PNG. Please use the "Print / PDF" button.'
+        );
+        setTimeout(() => {
+          setDownloadState('idle');
+        }, 5000);
+      }
+    });
   };
 
   // Monthly filtered data
@@ -95,20 +114,58 @@ export const ReportsView: React.FC = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={handlePrint}
-            className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+            className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
           >
             <Printer className="w-4 h-4 text-slate-600 dark:text-slate-300" />
             <span>{t.printReceipt} / PDF</span>
           </button>
           <button
             onClick={handleDownloadPng}
-            className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm shadow-emerald-600/20 transition-all"
+            disabled={downloadState === 'loading'}
+            className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm ${
+              downloadState === 'loading'
+                ? 'bg-emerald-700 text-white opacity-85 cursor-wait'
+                : downloadState === 'success'
+                ? 'bg-emerald-700 text-white ring-2 ring-emerald-400'
+                : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20 active:scale-95 cursor-pointer'
+            }`}
+            title={lang === 'bn' ? 'রিপোর্টটি PNG ছবি হিসেবে ডাউনলোড করুন' : 'Download report as PNG image'}
           >
-            <Download className="w-4 h-4" />
-            <span>{t.downloadPng}</span>
+            {downloadState === 'loading' ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>{lang === 'bn' ? 'প্রস্তুত হচ্ছে...' : 'Preparing...'}</span>
+              </>
+            ) : downloadState === 'success' ? (
+              <>
+                <CheckCircle2 className="w-4 h-4 text-emerald-200" />
+                <span>{lang === 'bn' ? 'ডাউনলোড হয়েছে!' : 'Downloaded!'}</span>
+              </>
+            ) : (
+              <>
+                <Download className="w-4 h-4" />
+                <span>{t.downloadPng}</span>
+              </>
+            )}
           </button>
         </div>
       </div>
+
+      {/* Error alert if PNG download encounters issues */}
+      {errorMessage && (
+        <div className="no-print bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 rounded-xl p-3 flex items-center justify-between text-xs text-rose-700 dark:text-rose-300">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
+            <span>{errorMessage}</span>
+          </div>
+          <button
+            onClick={handlePrint}
+            className="underline font-semibold hover:text-rose-900 dark:hover:text-white shrink-0 ml-2"
+          >
+            {lang === 'bn' ? 'প্রিন্ট / PDF অপশন খুলুন' : 'Open Print / PDF'}
+          </button>
+        </div>
+      )}
 
       {/* Filter and Tab Selectors */}
       <div className="no-print bg-white dark:bg-slate-900 p-3 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col md:flex-row items-center justify-between gap-3">

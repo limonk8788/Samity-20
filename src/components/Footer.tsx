@@ -1,11 +1,26 @@
-import React from 'react';
-import { Building2, Phone, Mail, MapPin, ShieldCheck, HeartHandshake, FileSpreadsheet, Users, Wallet, Bell, ChevronRight } from 'lucide-react';
+import React, { useState } from 'react';
+import { 
+  Building2, Phone, Mail, MapPin, ShieldCheck, HeartHandshake, 
+  FileSpreadsheet, Users, Wallet, Bell, ChevronRight, Smartphone, 
+  Download, CheckCircle2, HelpCircle, Laptop, WifiOff, Zap
+} from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { translations } from '../utils/translations';
+import { usePWA } from '../hooks/usePWA';
+import { PWAInstallModal } from './PWAInstallModal';
 
 export const Footer: React.FC = () => {
   const { lang, settings, setActiveTab, currentUser } = useApp();
   const t = translations[lang];
+  const { isInstallable, isInstalled, isIOS, installApp } = usePWA();
+  const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
+
+  const handleInstallClick = async () => {
+    const result = await installApp();
+    if (result === 'unsupported' || result === 'ios') {
+      setIsInstallModalOpen(true);
+    }
+  };
 
   return (
     <footer 
@@ -148,6 +163,89 @@ export const Footer: React.FC = () => {
           </div>
         </div>
 
+        {/* PWA App Install Banner Section */}
+        <div className="mb-8 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-emerald-900/10 via-teal-900/5 to-emerald-900/10 dark:from-emerald-950/40 dark:via-slate-800 dark:to-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/60 transition-all shadow-xs">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex items-start sm:items-center gap-3.5">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white p-2 flex items-center justify-center shadow-md shadow-emerald-700/20 shrink-0">
+                <Smartphone className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h4 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white">
+                    {lang === 'bn' ? 'মোবাইল ও কম্পিউটারে অ্যাপ ইনস্টল করুন' : 'Install App on Mobile & Desktop'}
+                  </h4>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300/60 dark:border-emerald-700">
+                    PWA Ready
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed">
+                  {lang === 'bn'
+                    ? 'প্লে-স্টোর ছাড়াই সরাসরি ব্রাউজার থেকে অ্যাপের মতো ইনস্টল করুন। হোমস্ক্রিন থেকে দ্রুত প্রবেশ ও নিরবচ্ছিন্ন ব্যবহারের সুবিধা।'
+                    : 'Install directly from your browser like a native app with offline capability and instant home screen access.'}
+                </p>
+                
+                {/* Feature Tags */}
+                <div className="flex flex-wrap items-center gap-3 pt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                  <span className="flex items-center gap-1">
+                    <Zap className="w-3.5 h-3.5 text-amber-500" />
+                    <span>{lang === 'bn' ? 'তাত্ক্ষণিক লোডিং' : 'Instant Loading'}</span>
+                  </span>
+                  <span className="text-slate-300 dark:text-slate-600">•</span>
+                  <span className="flex items-center gap-1">
+                    <WifiOff className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <span>{lang === 'bn' ? 'অফলাইন ক্যাশ' : 'Offline Cached'}</span>
+                  </span>
+                  <span className="text-slate-300 dark:text-slate-600">•</span>
+                  <span className="flex items-center gap-1">
+                    <Laptop className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+                    <span>{lang === 'bn' ? 'মোবাইল ও পিসি সাপোর্ট' : 'Mobile & PC'}</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2 w-full md:w-auto shrink-0 pt-1 md:pt-0">
+              {isInstalled ? (
+                <div className="flex items-center gap-2">
+                  <span className="px-3 py-2 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-semibold flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <span>{lang === 'bn' ? 'অ্যাপটি ইনস্টল রয়েছে' : 'App is Installed'}</span>
+                  </span>
+                  <button
+                    onClick={() => setIsInstallModalOpen(true)}
+                    className="p-2 rounded-xl text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                    title={lang === 'bn' ? 'ইনস্টলেশন তথ্য' : 'Installation Info'}
+                  >
+                    <HelpCircle className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <button
+                    id="footer-pwa-install-btn"
+                    onClick={handleInstallClick}
+                    className="flex-1 md:flex-initial px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 shadow-sm shadow-emerald-600/30 transition-all cursor-pointer"
+                    title={lang === 'bn' ? 'সমিতি অ্যাপটি ডিভাইসে ইনস্টল করুন' : 'Install Samity app on your device'}
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>{lang === 'bn' ? 'অ্যাপ ইনস্টল করুন' : 'Install App'}</span>
+                  </button>
+                  <button
+                    onClick={() => setIsInstallModalOpen(true)}
+                    className="px-3 py-2.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium border border-slate-200 dark:border-slate-700 transition-colors flex items-center gap-1.5 cursor-pointer"
+                    title={lang === 'bn' ? 'ইনস্টল করার নিয়মাবলী' : 'Installation Instructions'}
+                  >
+                    <HelpCircle className="w-3.5 h-3.5 text-slate-500" />
+                    <span className="hidden sm:inline">{lang === 'bn' ? 'নিয়মাবলী' : 'Guide'}</span>
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
         {/* Bottom Bar: Copyright and Tagline Echo */}
         <div className="pt-6 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left text-xs text-slate-500 dark:text-slate-400">
           <div>
@@ -158,6 +256,15 @@ export const Footer: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <PWAInstallModal
+        isOpen={isInstallModalOpen}
+        onClose={() => setIsInstallModalOpen(false)}
+        onDirectInstall={handleInstallClick}
+        isInstallable={isInstallable}
+        isInstalled={isInstalled}
+        isIOS={isIOS}
+      />
     </footer>
   );
 };
